@@ -120,35 +120,6 @@ def recomendar_productos():
 
     return jsonify(recomendaciones)
 
-@app.route("/scrap_busqueda", methods=["GET"])
-def scrap_busqueda():
-    term = request.args.get("term", "")
-    if not term:
-        return jsonify({"error": "Debe especificar un término de búsqueda con ?term=xxx"})
-
-    url = f"https://www.technosun.cl/search?q={term.replace(' ', '+')}"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        resp = requests.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(resp.content, "html.parser")
-        productos = []
-
-        for item in soup.select(".product-item-info"):
-            nombre = item.select_one(".product-item-link")
-            precio = item.select_one(".price")
-            link = nombre["href"] if nombre and "href" in nombre.attrs else None
-
-            if nombre and precio:
-                productos.append({
-                    "nombre": nombre.text.strip(),
-                    "precio": precio.text.strip(),
-                    "url": link
-                })
-
-        return jsonify(productos)
-
-    except Exception as e:
-        return jsonify({"error": "Scraping falló", "details": str(e)})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
