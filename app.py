@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 API_LOGIN = "4b3db3e92c23385671198d22411c1c21"
 API_TOKEN = "4e9008f506893c0d5d09a05d253294c333a90e1c8a1225e53b"
-STORE_URL = "technosun-cl.jumpseller.com"
+STORE_URL = "https://technosun-cl.jumpseller.com"
 AUTH = HTTPBasicAuth(API_LOGIN, API_TOKEN)
 
 @app.route("/productos", methods=["GET"])
