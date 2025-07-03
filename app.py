@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 import requests
 import os
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -101,6 +102,53 @@ def producto_variante_mas_barata(product_id):
             mas_barata = min(variantes, key=lambda v: float(v.get("price", "9999999")))
             return jsonify(mas_barata)
     return jsonify({"error": "No se encontraron variantes"})
+
+@app.route("/recomendar_productos", methods=["GET"])
+def recomendar_productos():
+    categoria = request.args.get("categoria", "").lower()
+    modelo = request.args.get("modelo", "").lower()
+    productos = obtener_todos_los_productos()
+    recomendaciones = []
+
+    for p in productos:
+        nombre = p["product"]["name"].lower()
+        descripcion = p["product"].get("description", "").lower()
+        categoria_prod = p["product"].get("category", {}).get("name", "").lower()
+
+        if (categoria in nombre or categoria in categoria_prod) and modelo in nombre:
+            recomendaciones.append(p)
+
+    return jsonify(recomendaciones)
+
+@app.route("/scrap_busqueda", methods=["GET"])
+def scrap_busqueda():
+    term = request.args.get("term", "")
+    if not term:
+        return jsonify({"error": "Debe especificar un término de búsqueda con ?term=xxx"})
+
+    url = f"https://www.technosun.cl/search?q={term.replace(' ', '+')}"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(resp.content, "html.parser")
+        productos = []
+
+        for item in soup.select(".product-item-info"):
+            nombre = item.select_one(".product-item-link")
+            precio = item.select_one(".price")
+            link = nombre["href"] if nombre and "href" in nombre.attrs else None
+
+            if nombre and precio:
+                productos.append({
+                    "nombre": nombre.text.strip(),
+                    "precio": precio.text.strip(),
+                    "url": link
+                })
+
+        return jsonify(productos)
+
+    except Exception as e:
+        return jsonify({"error": "Scraping falló", "details": str(e)})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
