@@ -20,9 +20,23 @@ def jumpseller_get(path, extra_params=""):
     except Exception as e:
         return {"error": "Unknown error", "details": str(e)}
 
+def obtener_todos_los_productos(limit=100):
+    productos = []
+    page = 1
+    while True:
+        data = jumpseller_get("/products.json", f"&page={page}&limit={limit}")
+        if isinstance(data, list):
+            productos.extend(data)
+            if len(data) < limit:
+                break
+            page += 1
+        else:
+            break
+    return productos
+
 @app.route("/productos", methods=["GET"])
 def productos():
-    return jsonify(jumpseller_get("/products.json"))
+    return jsonify(obtener_todos_los_productos())
 
 @app.route("/producto/<int:product_id>", methods=["GET"])
 def producto_por_id(product_id):
@@ -37,7 +51,7 @@ def producto_variantes(product_id):
 
 @app.route("/stock_bajo", methods=["GET"])
 def stock_bajo():
-    productos = jumpseller_get("/products.json")
+    productos = obtener_todos_los_productos()
     bajos = [p for p in productos if int(p["product"].get("stock", 0)) < 5]
     return jsonify(bajos)
 
@@ -63,9 +77,9 @@ def cliente_por_id(customer_id):
 
 @app.route("/buscar_producto", methods=["GET"])
 def buscar_producto():
-    nombre = request.args.get("nombre", "")
-    productos = jumpseller_get("/products.json")
-    encontrados = [p for p in productos if nombre.lower() in p["product"]["name"].lower()]
+    nombre = request.args.get("nombre", "").lower()
+    productos = obtener_todos_los_productos()
+    encontrados = [p for p in productos if nombre in p["product"]["name"].lower()]
     return jsonify(encontrados)
 
 @app.route("/producto_variante_max_stock/<int:product_id>", methods=["GET"])
