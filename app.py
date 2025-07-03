@@ -13,7 +13,7 @@ AUTH = HTTPBasicAuth(API_LOGIN, API_TOKEN)
 @app.route("/productos", methods=["GET"])
 def productos():
     try:
-        response = requests.get(f"{STORE_URL}/api/v1/products.json", auth=AUTH)
+        response = requests.get(f"{STORE_URL}/api/products.json", auth=AUTH)
         response.raise_for_status()
         return jsonify(response.json())
     except requests.exceptions.HTTPError as e:
@@ -24,7 +24,7 @@ def productos():
 @app.route("/stock_bajo", methods=["GET"])
 def stock_bajo():
     try:
-        response = requests.get(f"{STORE_URL}/api/v1/products.json", auth=AUTH)
+        response = requests.get(f"{STORE_URL}/api/products.json", auth=AUTH)
         response.raise_for_status()
         productos = response.json()
         bajos = [p for p in productos if int(p["product"].get("stock", 0)) < 5]
